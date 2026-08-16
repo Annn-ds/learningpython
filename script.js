@@ -97,6 +97,7 @@ function renderVideos() {
       videos = videos.filter((x) => x.id !== v.id);
       saveData(STORE_KEYS.videos, videos);
       renderVideos();
+      renderCalendar();
     });
     list.appendChild(card);
   });
@@ -115,6 +116,7 @@ document.getElementById("videoForm").addEventListener("submit", (e) => {
   videos.push({ id: uid(), title, date, youtubeId });
   saveData(STORE_KEYS.videos, videos);
   renderVideos();
+  renderCalendar();
   e.target.reset();
   e.target.classList.add("hidden");
 });
@@ -144,6 +146,7 @@ function renderNotes() {
       notes = notes.filter((x) => x.id !== n.id);
       saveData(STORE_KEYS.notes, notes);
       renderNotes();
+      renderCalendar();
     });
     list.appendChild(card);
   });
@@ -157,6 +160,7 @@ document.getElementById("noteForm").addEventListener("submit", (e) => {
   notes.push({ id: uid(), title, date, content });
   saveData(STORE_KEYS.notes, notes);
   renderNotes();
+  renderCalendar();
   e.target.reset();
   e.target.classList.add("hidden");
 });
@@ -202,6 +206,7 @@ function renderLessons() {
       lessons = lessons.filter((x) => x.id !== l.id);
       saveData(STORE_KEYS.lessons, lessons);
       renderLessons();
+      renderCalendar();
     });
 
     card.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
@@ -236,11 +241,142 @@ document.getElementById("lessonForm").addEventListener("submit", (e) => {
   lessons.push({ id: uid(), date, title, summary, exercises });
   saveData(STORE_KEYS.lessons, lessons);
   renderLessons();
+  renderCalendar();
   e.target.reset();
   e.target.classList.add("hidden");
 });
 
 wireToggle("addLessonBtn", "cancelLessonBtn", "lessonForm");
+
+// ================= CALENDAR =================
+let calCursor = new Date();
+calCursor.setDate(1);
+
+function eventsByDate() {
+  const map = {};
+  const push = (date, entry) => {
+    if (!date) return;
+    (map[date] = map[date] || []).push(entry);
+  };
+  videos.forEach((v) => push(v.date, { kind: "video", label: "Video", title: v.title }));
+  notes.forEach((n) => push(n.date, { kind: "note", label: "Ghi chú", title: n.title, extra: n.content }));
+  lessons.forEach((l) =>
+    push(l.date, {
+      kind: "lesson",
+      label: "Bài học",
+      title: l.title,
+      extra: [l.summary, (l.exercises || []).length ? `${l.exercises.length} bài tập` : ""].filter(Boolean).join(" · "),
+    })
+  );
+  return map;
+}
+
+function renderCalendar() {
+  const grid = document.getElementById("calendarGrid");
+  const label = document.getElementById("calMonthLabel");
+  grid.innerHTML = "";
+
+  const year = calCursor.getFullYear();
+  const month = calCursor.getMonth();
+  label.textContent = `Tháng ${month + 1} / ${year}`;
+
+  const firstDay = new Date(year, month, 1);
+  const startOffset = firstDay.getDay(); // 0 = Sunday
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const today = todayStr();
+  const map = eventsByDate();
+
+  const cells = [];
+  for (let i = startOffset - 1; i >= 0; i--) {
+    cells.push({ day: daysInPrevMonth - i, outside: true, dateStr: null });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    cells.push({ day: d, outside: false, dateStr });
+  }
+  while (cells.length % 7 !== 0) {
+    cells.push({ day: cells.length, outside: true, dateStr: null });
+  }
+
+  cells.forEach((cell) => {
+    const el = document.createElement("div");
+    el.className = "cal-day" + (cell.outside ? " outside" : "") + (cell.dateStr === today ? " today" : "");
+
+    const num = document.createElement("div");
+    num.className = "cal-day-num";
+    num.textContent = cell.day;
+    el.appendChild(num);
+
+    const evWrap = document.createElement("div");
+    evWrap.className = "cal-day-events";
+    const dayEvents = (cell.dateStr && map[cell.dateStr]) || [];
+    dayEvents.slice(0, 3).forEach((ev) => {
+      const chip = document.createElement("div");
+      chip.className = `cal-event ev-${ev.kind}`;
+      chip.textContent = ev.title;
+      evWrap.appendChild(chip);
+    });
+    if (dayEvents.length > 3) {
+      const more = document.createElement("div");
+      more.className = "cal-more";
+      more.textContent = `+${dayEvents.length - 3} khác`;
+      evWrap.appendChild(more);
+    }
+    el.appendChild(evWrap);
+
+    if (cell.dateStr) {
+      el.addEventListener("click", () => openDayModal(cell.dateStr, dayEvents));
+    }
+
+    grid.appendChild(el);
+  });
+}
+
+function openDayModal(dateStr, dayEvents) {
+  const overlay = document.getElementById("dayModalOverlay");
+  const title = document.getElementById("dayModalTitle");
+  const body = document.getElementById("dayModalBody");
+  title.textContent = formatDate(dateStr);
+  body.innerHTML = "";
+
+  if (!dayEvents.length) {
+    body.innerHTML = '<p class="modal-empty">Không có mục nào trong ngày này.</p>';
+  } else {
+    dayEvents.forEach((ev) => {
+      const item = document.createElement("div");
+      item.className = `modal-item ev-${ev.kind}`;
+      item.innerHTML = `
+        <div class="kind">${ev.label}</div>
+        <div class="title">${escapeHtml(ev.title)}</div>
+        ${ev.extra ? `<div class="extra">${escapeHtml(ev.extra)}</div>` : ""}
+      `;
+      body.appendChild(item);
+    });
+  }
+  overlay.classList.remove("hidden");
+}
+
+document.getElementById("dayModalClose").addEventListener("click", () => {
+  document.getElementById("dayModalOverlay").classList.add("hidden");
+});
+document.getElementById("dayModalOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "dayModalOverlay") e.target.classList.add("hidden");
+});
+
+document.getElementById("calPrevBtn").addEventListener("click", () => {
+  calCursor.setMonth(calCursor.getMonth() - 1);
+  renderCalendar();
+});
+document.getElementById("calNextBtn").addEventListener("click", () => {
+  calCursor.setMonth(calCursor.getMonth() + 1);
+  renderCalendar();
+});
+document.getElementById("calTodayBtn").addEventListener("click", () => {
+  calCursor = new Date();
+  calCursor.setDate(1);
+  renderCalendar();
+});
 
 // ---------- Init ----------
 document.getElementById("videoDate").value = todayStr();
@@ -250,3 +386,4 @@ document.getElementById("lessonDate").value = todayStr();
 renderVideos();
 renderNotes();
 renderLessons();
+renderCalendar();

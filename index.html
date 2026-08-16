@@ -16,6 +16,7 @@
       <button class="tab-btn active" data-tab="videos">Video</button>
       <button class="tab-btn" data-tab="notes">Ghi chú</button>
       <button class="tab-btn" data-tab="lessons">Bài học</button>
+      <button class="tab-btn" data-tab="calendar">Lịch</button>
     </nav>
   </header>
 
@@ -113,7 +114,41 @@
       <div id="lessonList" class="lesson-list"></div>
       <p id="lessonEmpty" class="empty-state hidden">Chưa có bài học nào.</p>
     </section>
+
+    <!-- CALENDAR TAB -->
+    <section id="calendar" class="tab-panel">
+      <div class="panel-header">
+        <h2>Lịch học tập</h2>
+        <div class="calendar-controls">
+          <button id="calPrevBtn" class="btn-ghost" aria-label="Tháng trước">&#8249;</button>
+          <span id="calMonthLabel" class="cal-month-label"></span>
+          <button id="calNextBtn" class="btn-ghost" aria-label="Tháng sau">&#8250;</button>
+          <button id="calTodayBtn" class="btn-ghost">Hôm nay</button>
+        </div>
+      </div>
+
+      <div class="calendar-legend">
+        <span class="legend-item"><span class="dot dot-video"></span>Video</span>
+        <span class="legend-item"><span class="dot dot-note"></span>Ghi chú</span>
+        <span class="legend-item"><span class="dot dot-lesson"></span>Bài học</span>
+      </div>
+
+      <div class="calendar-weekdays">
+        <span>CN</span><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span>
+      </div>
+      <div id="calendarGrid" class="calendar-grid"></div>
+    </section>
   </main>
+
+  <div id="dayModalOverlay" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="dayModalTitle"></h3>
+        <button id="dayModalClose" class="btn-ghost">Đóng</button>
+      </div>
+      <div id="dayModalBody" class="modal-body"></div>
+    </div>
+  </div>
 
   <footer class="site-footer">
     <p>Dữ liệu được lưu ngay trên trình duyệt của bạn (localStorage).</p>

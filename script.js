@@ -258,7 +258,7 @@ function eventsByDate() {
     if (!date) return;
     (map[date] = map[date] || []).push(entry);
   };
-  videos.forEach((v) => push(v.date, { kind: "video", label: "Video", title: v.title }));
+  videos.forEach((v) => push(v.date, { kind: "video", label: "Video", title: v.title, youtubeId: v.youtubeId }));
   notes.forEach((n) => push(n.date, { kind: "note", label: "Ghi chú", title: n.title, extra: n.content }));
   lessons.forEach((l) =>
     push(l.date, {
@@ -346,9 +346,13 @@ function openDayModal(dateStr, dayEvents) {
     dayEvents.forEach((ev) => {
       const item = document.createElement("div");
       item.className = `modal-item ev-${ev.kind}`;
+      const titleHtml =
+        ev.kind === "video" && ev.youtubeId
+          ? `<a class="title video-link" href="https://www.youtube.com/watch?v=${encodeURIComponent(ev.youtubeId)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ev.title)} ↗</a>`
+          : `<div class="title">${escapeHtml(ev.title)}</div>`;
       item.innerHTML = `
         <div class="kind">${ev.label}</div>
-        <div class="title">${escapeHtml(ev.title)}</div>
+        ${titleHtml}
         ${ev.extra ? `<div class="extra">${escapeHtml(ev.extra)}</div>` : ""}
       `;
       body.appendChild(item);

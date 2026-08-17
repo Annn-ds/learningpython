@@ -435,6 +435,13 @@ main {
 }
 
 .modal-item .title { font-size: 0.92rem; font-weight: 600; margin-top: 2px; }
+.modal-item .title.video-link {
+  display: inline-block;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+}
+.modal-item .title.video-link:hover { color: var(--accent); text-decoration: underline; }
 .modal-item .extra { font-size: 0.82rem; color: var(--text-dim); margin-top: 4px; white-space: pre-wrap; }
 .modal-empty { color: var(--text-dim); font-size: 0.88rem; text-align: center; padding: 20px 0; }
 

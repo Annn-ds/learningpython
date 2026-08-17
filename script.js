@@ -210,6 +210,7 @@ function renderLessons() {
     });
 
     card.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+      cb.addEventListener("click", (e) => e.stopPropagation());
       cb.addEventListener("change", () => {
         const ex = l.exercises.find((x) => x.id === cb.dataset.ex);
         if (ex) {
@@ -218,6 +219,11 @@ function renderLessons() {
           renderLessons();
         }
       });
+    });
+
+    card.addEventListener("click", (e) => {
+      if (e.target.closest(".btn-danger")) return;
+      openLessonModal(l.id);
     });
 
     list.appendChild(card);
@@ -334,6 +340,17 @@ function renderCalendar() {
   });
 }
 
+function openModal(overlay) {
+  overlay.classList.remove("hidden");
+  // force reflow so the "open" transition actually plays
+  void overlay.offsetWidth;
+  overlay.classList.add("open");
+}
+
+function closeModal(overlay) {
+  overlay.classList.remove("open");
+}
+
 function openDayModal(dateStr, dayEvents) {
   const overlay = document.getElementById("dayModalOverlay");
   const title = document.getElementById("dayModalTitle");
@@ -359,14 +376,64 @@ function openDayModal(dateStr, dayEvents) {
       body.appendChild(item);
     });
   }
-  overlay.classList.remove("hidden");
+  openModal(overlay);
 }
 
 document.getElementById("dayModalClose").addEventListener("click", () => {
-  document.getElementById("dayModalOverlay").classList.add("hidden");
+  closeModal(document.getElementById("dayModalOverlay"));
 });
 document.getElementById("dayModalOverlay").addEventListener("click", (e) => {
-  if (e.target.id === "dayModalOverlay") e.target.classList.add("hidden");
+  if (e.target.id === "dayModalOverlay") closeModal(e.target);
+});
+
+// ---------- Lesson detail modal ----------
+function openLessonModal(lessonId) {
+  const lesson = lessons.find((l) => l.id === lessonId);
+  if (!lesson) return;
+
+  const overlay = document.getElementById("lessonModalOverlay");
+  const dateEl = document.getElementById("lessonModalDate");
+  const titleEl = document.getElementById("lessonModalTitle");
+  const body = document.getElementById("lessonModalBody");
+
+  dateEl.textContent = formatDate(lesson.date);
+  titleEl.textContent = lesson.title;
+
+  const exercisesHtml = (lesson.exercises || [])
+    .map(
+      (ex) => `
+      <li class="${ex.done ? "done" : ""}">
+        <input type="checkbox" data-ex="${ex.id}" ${ex.done ? "checked" : ""}>
+        <span>${escapeHtml(ex.text)}</span>
+      </li>`
+    )
+    .join("");
+
+  body.innerHTML = `
+    ${lesson.summary ? `<p class="summary">${escapeHtml(lesson.summary)}</p>` : ""}
+    ${exercisesHtml ? `<ul class="exercise-list">${exercisesHtml}</ul>` : '<p class="modal-empty">Chưa có bài tập nào.</p>'}
+  `;
+
+  body.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const ex = lesson.exercises.find((x) => x.id === cb.dataset.ex);
+      if (ex) {
+        ex.done = cb.checked;
+        saveData(STORE_KEYS.lessons, lessons);
+        renderLessons();
+        cb.closest("li").classList.toggle("done", ex.done);
+      }
+    });
+  });
+
+  openModal(overlay);
+}
+
+document.getElementById("lessonModalClose").addEventListener("click", () => {
+  closeModal(document.getElementById("lessonModalOverlay"));
+});
+document.getElementById("lessonModalOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "lessonModalOverlay") closeModal(e.target);
 });
 
 document.getElementById("calPrevBtn").addEventListener("click", () => {

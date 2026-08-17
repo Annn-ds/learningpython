@@ -271,6 +271,7 @@ function eventsByDate() {
       kind: "lesson",
       label: "Bài học",
       title: l.title,
+      lessonId: l.id,
       extra: [l.summary, (l.exercises || []).length ? `${l.exercises.length} bài tập` : ""].filter(Boolean).join(" · "),
     })
   );
@@ -364,15 +365,26 @@ function openDayModal(dateStr, dayEvents) {
     dayEvents.forEach((ev) => {
       const item = document.createElement("div");
       item.className = `modal-item ev-${ev.kind}`;
-      const titleHtml =
-        ev.kind === "video" && ev.youtubeId
-          ? `<a class="title video-link" href="https://www.youtube.com/watch?v=${encodeURIComponent(ev.youtubeId)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ev.title)} ↗</a>`
-          : `<div class="title">${escapeHtml(ev.title)}</div>`;
+      let titleHtml;
+      if (ev.kind === "video" && ev.youtubeId) {
+        titleHtml = `<a class="title video-link" href="https://www.youtube.com/watch?v=${encodeURIComponent(ev.youtubeId)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ev.title)} ↗</a>`;
+      } else if (ev.kind === "lesson" && ev.lessonId) {
+        titleHtml = `<a class="title video-link" href="#">${escapeHtml(ev.title)} ↗</a>`;
+      } else {
+        titleHtml = `<div class="title">${escapeHtml(ev.title)}</div>`;
+      }
       item.innerHTML = `
         <div class="kind">${ev.label}</div>
         ${titleHtml}
         ${ev.extra ? `<div class="extra">${escapeHtml(ev.extra)}</div>` : ""}
       `;
+      if (ev.kind === "lesson" && ev.lessonId) {
+        item.querySelector(".title").addEventListener("click", (e) => {
+          e.preventDefault();
+          closeModal(document.getElementById("dayModalOverlay"));
+          openLessonModal(ev.lessonId);
+        });
+      }
       body.appendChild(item);
     });
   }

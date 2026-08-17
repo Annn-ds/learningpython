@@ -295,8 +295,9 @@ function renderCalendar() {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     cells.push({ day: d, outside: false, dateStr });
   }
+  let nextDay = 1;
   while (cells.length % 7 !== 0) {
-    cells.push({ day: cells.length, outside: true, dateStr: null });
+    cells.push({ day: nextDay++, outside: true, dateStr: null });
   }
 
   cells.forEach((cell) => {
